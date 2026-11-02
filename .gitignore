@@ -1,0 +1,38 @@
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Archivos compilados
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Compilaciones
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Archivos temporales
+*.tmp
+*.temp
+*.log
+*.cache
+*.vsidx
+
+# Resultados de pruebas
+TestResults/
+*.trx
+
+# Paquetes y herramientas
+packages/
+*.nupkg
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
