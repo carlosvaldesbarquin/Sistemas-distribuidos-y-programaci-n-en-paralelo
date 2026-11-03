@@ -1,10 +1,10 @@
 ﻿
-
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Globalization;
+using System.Threading;
 
 class Program
 {
@@ -15,37 +15,66 @@ class Program
 
         servidor.Start();
 
-        Console.WriteLine("Servidor iniciado en puerto 13000");
+        Console.WriteLine("Servidor multihilo iniciado");
 
         while (true)
         {
             Console.WriteLine("Esperando cliente...");
 
-            try
+            TcpClient cliente = servidor.AcceptTcpClient();
+
+            Console.WriteLine("Cliente conectado");
+
+            // Creamos un hilo para atender al cliente
+            Thread hilo = new Thread(AtenderCliente);
+
+            // Pasamos el cliente al nuevo hilo
+            hilo.Start(cliente);
+        }
+    }
+
+    static void AtenderCliente(object objetoCliente)
+    {
+        TcpClient cliente = (TcpClient)objetoCliente;
+
+        int idHilo = Thread.CurrentThread.ManagedThreadId;
+
+        try
+        {
+            using (cliente)
+            using (NetworkStream stream = cliente.GetStream())
+            using (StreamReader lector = new StreamReader(stream))
+            using (StreamWriter escritor = new StreamWriter(stream))
             {
-                using (TcpClient cliente = servidor.AcceptTcpClient())
-                using (NetworkStream stream = cliente.GetStream())
-                using (StreamReader lector = new StreamReader(stream))
-                using (StreamWriter escritor = new StreamWriter(stream))
-                {
-                    escritor.AutoFlush = true;
+                escritor.AutoFlush = true;
 
-                    string mensaje = lector.ReadLine();
+                Console.WriteLine(
+                    "Hilo " + idHilo + ": Atendiendo cliente");
 
-                    Console.WriteLine("Recibido: " + mensaje);
+                string mensaje = lector.ReadLine();
 
-                    string respuesta = ProcesarOperacion(mensaje);
+                Console.WriteLine(
+                    "Hilo " + idHilo + ": Recibido " + mensaje);
 
-                    escritor.WriteLine(respuesta);
+                string respuesta = ProcesarOperacion(mensaje);
 
-                    Console.WriteLine("Enviado: " + respuesta);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
+                // Simulamos una operación que tarda 5 segundos
+                Thread.Sleep(5000);
+
+                escritor.WriteLine(respuesta);
+
+                Console.WriteLine(
+                    "Hilo " + idHilo + ": Enviado " + respuesta);
             }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                "Hilo " + idHilo + ": Error: " + ex.Message);
+        }
+
+        Console.WriteLine(
+            "Hilo " + idHilo + ": Finalizado");
     }
 
     static string ProcesarOperacion(string mensaje)
@@ -86,33 +115,41 @@ class Program
 
         decimal resultado;
 
-        switch (operacion)
+        try
         {
-            case "SUMAR":
-                resultado = numero1 + numero2;
-                break;
+            switch (operacion)
+            {
+                case "SUMAR":
+                    resultado = numero1 + numero2;
+                    break;
 
-            case "RESTAR":
-                resultado = numero1 - numero2;
-                break;
+                case "RESTAR":
+                    resultado = numero1 - numero2;
+                    break;
 
-            case "MULTIPLICAR":
-                resultado = numero1 * numero2;
-                break;
+                case "MULTIPLICAR":
+                    resultado = numero1 * numero2;
+                    break;
 
-            case "DIVIDIR":
-                if (numero2 == 0)
-                {
-                    return "ERROR: No se puede dividir entre cero";
-                }
+                case "DIVIDIR":
+                    if (numero2 == 0)
+                    {
+                        return "ERROR: Division entre cero";
+                    }
 
-                resultado = numero1 / numero2;
-                break;
+                    resultado = numero1 / numero2;
+                    break;
 
-            default:
-                return "ERROR: Operacion desconocida";
+                default:
+                    return "ERROR: Operacion desconocida";
+            }
+        }
+        catch (OverflowException)
+        {
+            return "ERROR: Resultado fuera de rango";
         }
 
-        return resultado.ToString(CultureInfo.InvariantCulture);
+        return resultado.ToString(
+            CultureInfo.InvariantCulture);
     }
 }
