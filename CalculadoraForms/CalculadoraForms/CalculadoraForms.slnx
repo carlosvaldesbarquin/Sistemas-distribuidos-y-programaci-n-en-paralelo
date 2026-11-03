@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CalculadoraForms/CalculadoraForms.csproj" />
+  <Project Path="ServidorCalculadoraTCP/ServidorCalculadoraTCP.csproj" />
+</Solution>
